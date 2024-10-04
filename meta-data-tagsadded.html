@@ -1,0 +1,60 @@
+//css ::
+<style include="nuxeo-styles">
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .tag {
+      display: inline-block;
+      background-color: #007bff;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 15px;
+      margin: 5px;
+    }
+  </style>
+//html ::
+       <div role="widget">
+        <label>Tags</label>
+        <template is="dom-repeat" items="[[document.contextParameters.tags]]">
+          <div class="tag">[[item]]</div> <!-- Directly show the tag as a string -->
+        </template>
+      </div>
+  
+    </template>
+//js ::
+    <script>
+    Polymer({
+    is: 'nuxeo-event_picture-metadata-layout',
+    behaviors: [Nuxeo.LayoutBehavior],
+  
+    properties: {
+      document: {
+        type: Object,
+        observer: '_documentChanged',
+      },
+    },
+  
+    ready: function() {
+      this.addEventListener('tags-updated', this._refreshTags);
+    },
+  
+    _documentChanged: function (document) {
+      if (document && document.uid) {
+        const documentId = document.uid;
+        let storedTags = JSON.parse(localStorage.getItem(`tags_${documentId}`)) || [];
+        this.set('document.contextParameters.tags', storedTags);
+      }
+    },
+  
+    _refreshTags: function(event) {
+      const { documentId, tags } = event.detail;
+      if (this.document.uid === documentId) {
+        this.set('document.contextParameters.tags', tags);
+      }
+    }
+  });
+  
+  
+    </script>

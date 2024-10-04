@@ -1,0 +1,286 @@
+//css::
+.bounding-box {
+  position: absolute;
+  border: 2px solid #007bff;
+  border-radius: 8px;
+  background-color: rgba(0, 123, 255, 0.05);
+  resize: both;
+  width: 150px;
+  height: 100px;
+  cursor: move;
+  overflow: hidden;
+  z-index: 150;
+  user-select: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.bounding-box:hover {
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.bounding-box input {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 5px 10px;
+  font-size: 14px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.4);
+  outline: none;
+  color: #333;
+  border-radius: 0 0 8px 8px;
+}
+
+.bounding-box .label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 123, 255, 0.8);
+  color: white;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 0 0 8px 8px;
+}
+
+.bounding-box-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.bounding-box-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.icon.active {
+  color: #93a4c7;
+}
+.icon {
+  font-size: 24px;
+  cursor: pointer;
+  color: white;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.icon:hover {
+  color: #93a4c7;
+  transform: scale(1.2);
+}
+
+.bounding-box {
+  position: absolute;
+  z-index: 150;
+}
+
+.bounding-box input {
+  z-index: 101;
+}
+
+//html:
+<div class="icon" id="tagIcon" on-click="_enableTaggingMode">
+    <iron-icon icon="icons:label" title="Tags"></iron-icon>
+  </div>
+  <!-- Bounding box container -->
+  <div id="boundingBoxContainer" class="bounding-box-container"></div>
+</div>
+//js:
+isTaggingMode: {
+    type: Boolean,
+    value: false,
+  },
+  tags: {
+    type: Object,
+    value: new Set(),
+  },
+  boundingBoxId: {
+    type: Number,
+    value: 0,
+  },
+  clickCount: {
+    type: Number,
+    value: 0,
+  },
+  boundingBoxExists: {
+    type: Boolean,
+    value: false,
+  },
+},
+//over all items ::
+_documentChanged: function (document) {
+  console.log(document.properties);
+  console.log(document.contextParameters.tags)
+  if (document && document.properties) {
+    const documentId = document.uid;
+    let imageUrl = document.properties['file:content'] ? document.properties['file:content'].data : null;
+
+    const savedImageSrc = localStorage.getItem(`homepageImageSrc_${documentId}`);
+    if (savedImageSrc) {
+      imageUrl = savedImageSrc;
+    }
+
+    if (imageUrl) {
+      this.set('document.properties.file:content.data', imageUrl);
+    }
+  }
+},
+
+////////////////////////////////////////////// points //////////////////////////////////////////////////////////////////////////////
+//taging ::
+
+_enableTaggingMode: function () {
+  this.isTaggingMode = !this.isTaggingMode;
+  this.isBoxActive = false;
+  const tagIcon = this.$.tagIcon;
+
+  if (this.isTaggingMode) {
+    tagIcon.classList.add('active');
+    this.$.imageElement.addEventListener('click', this._trackClicks.bind(this));
+  } else {
+    tagIcon.classList.remove('active');
+    this.$.imageElement.removeEventListener('click', this._trackClicks.bind(this));
+  }
+},
+
+
+_trackClicks: function (event) {
+  if (this.isTaggingMode && !this.isBoxActive) {
+    this._createBoundingBox(event);
+  }
+},
+
+_createBoundingBox: function (event) {
+  if (this.isTaggingMode && !this.isBoxActive) {
+    const boundingBoxContainer = this.$.boundingBoxContainer;
+    const boundingBox = document.createElement('div');
+    boundingBox.classList.add('bounding-box');
+    const containerWidth = boundingBoxContainer.clientWidth;
+    const containerHeight = boundingBoxContainer.clientHeight;
+    const boundingBoxWidth = 200;
+    const boundingBoxHeight = 150;
+
+    const centerX = (containerWidth * 2) - (boundingBoxWidth / 2);
+    const centerY = (containerHeight * 2) - (boundingBoxHeight / 2);
+    boundingBox.style.left = `${centerX * 4}px`;
+    boundingBox.style.top = `${centerY * 3}px`;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Enter tag name';
+    boundingBox.appendChild(input);
+
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Save Tag';
+    saveButton.style.backgroundColor = '#007bff';
+    saveButton.style.color = 'white';
+    saveButton.style.border = 'none';
+    saveButton.style.padding = '6px 8px';
+    saveButton.style.fontSize = '10px';
+    saveButton.style.fontWeight = 'bold';
+    saveButton.style.borderRadius = '5px';
+    saveButton.style.cursor = 'pointer';
+    saveButton.style.transition = 'background-color 0.3s ease-in-out, transform 0.2s ease-in-out';
+    saveButton.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+    saveButton.addEventListener('mouseover', function () {
+      saveButton.style.backgroundColor = '#0056b3';
+      saveButton.style.transform = 'translateY(-2px)';
+      saveButton.style.boxShadow = '0 6px 10px rgba(0, 0, 0, 0.15)';
+    });
+
+    saveButton.addEventListener('mouseout', function () {
+      saveButton.style.backgroundColor = '#007bff';
+      saveButton.style.transform = 'translateY(0)';
+      saveButton.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+    });
+    saveButton.addEventListener('mousedown', function () {
+      saveButton.style.backgroundColor = '#004494';
+      saveButton.style.transform = 'translateY(0)';
+    });
+
+    saveButton.addEventListener('mouseup', function () {
+      saveButton.style.backgroundColor = '#0056b3';
+    });
+
+    boundingBox.appendChild(saveButton);
+    this.isBoxActive = true;
+    input.addEventListener('blur', () => this._saveBoundingBox(boundingBox, input.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this._saveBoundingBox(boundingBox, input.value);
+      }
+    });
+    saveButton.addEventListener('click', () => this._saveBoundingBox(boundingBox, input.value));
+
+    boundingBoxContainer.appendChild(boundingBox);
+    boundingBox.addEventListener('mousedown', (e) => this._dragBoundingBox(e, boundingBox));
+  }
+},
+
+
+_saveBoundingBox: function (boundingBox, tagName) {
+  tagName = tagName.trim();
+  if (!tagName) {
+    boundingBox.remove();
+    this.isBoxActive = false;
+    return;
+  }
+
+  console.log(`Tag saved: ${tagName}`);
+
+  const label = document.createElement('div');
+  label.classList.add('label');
+  label.textContent = tagName;
+
+  boundingBox.innerHTML = '';
+  boundingBox.appendChild(label);
+  boundingBox.style.border = '2px solid #007bff';
+  boundingBox.style.backgroundColor = 'rgba(0, 123, 255, 0.2)';
+  boundingBox.style.pointerEvents = 'none';
+  this.isBoxActive = false;
+
+  if (this.document && this.document.uid) {
+    const documentId = this.document.uid;
+    let storedTags = JSON.parse(localStorage.getItem(`tags_${documentId}`)) || [];
+    storedTags.push(tagName);
+    localStorage.setItem(`tags_${documentId}`, JSON.stringify(storedTags));
+    if (!this.document.contextParameters.tags) {
+      this.document.contextParameters.tags = [];
+    }
+    this.document.contextParameters.tags.push(tagName);
+    this.notifyPath('document.contextParameters.tags');
+
+    // Dispatch event to update tags
+    this.dispatchEvent(new CustomEvent('tags-updated', {
+      detail: {
+        documentId: documentId,
+        tags: storedTags,
+      },
+      bubbles: true,
+      composed: true,
+    }));
+
+    console.log(`Tags for document ${documentId}:`, storedTags);
+    window.location.reload();
+
+  }
+},
+
+_refreshTags: function () {
+  this.notifyPath('document.contextParameters.tags');
+},
+
+_dragBoundingBox: function (e, box) {
+  const offsetX = e.clientX - box.offsetLeft;
+  const offsetY = e.clientY - box.offsetTop;
+
+  const mouseMoveHandler = (e) => {
+    box.style.left = `${e.clientX - offsetX}px`;
+    box.style.top = `${e.clientY - offsetY}px`;
+  };
+
+  document.addEventListener('mousemove', mouseMoveHandler);
+  document.addEventListener('mouseup', () => {
+    document.removeEventListener('mousemove', mouseMoveHandler);
+  }, { once: true });
+},

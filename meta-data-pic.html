@@ -1,0 +1,91 @@
+<dom-module id="nuxeo-event_picture-metadata-layout">
+    <template>
+      <style include="nuxeo-styles">
+        label {
+          font-weight: bold;
+          display: block;
+          margin-bottom: 8px;
+        }
+        .tag {
+          display: inline-block;
+          background-color: #007bff;
+          color: white;
+          padding: 5px 10px;
+          border-radius: 15px;
+          margin: 5px;
+        }
+      </style>
+  
+      <div role="widget">
+        <label>Title</label>
+        <div name="title">[[document.properties.dc:title]]</div>
+      </div>
+  
+      <div role="widget">
+        <label>Event Code</label>
+        <div name="event_code">[[document.properties.event_picture:event_code]]</div>
+      </div>
+  
+      <div role="widget">
+        <label>Creation Date</label>
+        <nuxeo-date datetime="[[document.properties.event_picture:creation_date]]" name="creation_date"></nuxeo-date>
+      </div>
+  
+      <nuxeo-directory-suggestion value="[[document.properties.event_picture:place]]" label="Place" readonly="true" directory-name="Places" name="place" role="widget"></nuxeo-directory-suggestion>
+  
+      <nuxeo-directory-suggestion value="[[document.properties.common:icon]]" label="Type" readonly="true" directory-name="event_types" name="type" role="widget"></nuxeo-directory-suggestion>
+  
+      <div role="widget">
+        <label>Description</label>
+        <div name="description">[[document.properties.dc:description]]</div>
+      </div>
+  
+      <!-- Add a section for tags -->
+      <div role="widget">
+        <label>Tags</label>
+        <template is="dom-repeat" items="[[document.contextParameters.tags]]">
+          <div class="tag">[[item]]</div> <!-- Directly show the tag as a string -->
+        </template>
+      </div>
+  
+    </template>
+  
+    <script>
+    Polymer({
+    is: 'nuxeo-event_picture-metadata-layout',
+    behaviors: [Nuxeo.LayoutBehavior],
+  
+    properties: {
+      document: {
+        type: Object,
+        observer: '_documentChanged',
+      },
+    },
+  
+    ready: function() {
+      // Listen for the custom event
+      this.addEventListener('tags-updated', this._refreshTags);
+    },
+  
+    _documentChanged: function (document) {
+      if (document && document.uid) {
+        const documentId = document.uid;
+  
+        // Get tags from local storage if the document has changed
+        let storedTags = JSON.parse(localStorage.getItem(`tags_${documentId}`)) || [];
+        this.set('document.contextParameters.tags', storedTags);
+      }
+    },
+  
+    _refreshTags: function(event) {
+      const { documentId, tags } = event.detail;
+      if (this.document.uid === documentId) {
+        this.set('document.contextParameters.tags', tags);
+      }
+    }
+  });
+  
+  
+    </script>
+  </dom-module>
+  

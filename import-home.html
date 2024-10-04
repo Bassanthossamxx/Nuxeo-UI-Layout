@@ -1,0 +1,271 @@
+<style include="nuxeo-styles">
+    /* Map and Popup Styling */
+    #map-container {
+      width: 100%;
+      height: 385px;
+      border: 2px solid white;
+      overflow: hidden;
+    }
+
+    #map {
+      margin-top: 10px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .button {
+      border-radius: 25px;
+      margin: auto;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      background-color: #000000;
+      padding: 10px 10px;
+      color: #ffffff;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+      width: 20%;
+      background-color: #15283d;
+      text-align: center;
+    }
+     .button:hover {
+      background-color: #264466;
+    }
+
+    .map-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      color: #0f1a2b;
+      transform: translate(-50%, -50%);
+      z-index: 1001;
+      background-color: white;
+      box-shadow: 0 4px 12px rgba(38, 68, 102, 0.3);
+      border-radius: 8px;
+      padding: 20px;
+      display: none;
+      width: 80%;
+      max-width: 600px;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+
+    .map-popup-header {
+      margin-bottom: 20px;
+      font-size: 1.25em;
+      font-weight: bold;
+    }
+
+    .map-popup-body {
+      padding: 0;
+      height: calc(100% - 70px);
+      overflow: hidden;
+    }
+
+    .map-popup-footer {
+      margin-top: 20px;
+      text-align: right;
+    }
+
+    .map-popup button {
+      margin-left: 10px;
+    }
+
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    #search-bar {
+      width: 90%;
+      padding: 7.5px;
+      margin-bottom: 25px;
+      margin-top: 20px;
+      border-radius: 15px;
+      font-size: 16px;
+    }
+
+    .marker {
+      width: 10px;
+      height: 10px;
+      background-color: #15283d;
+      border-radius: 50%;
+      border-color: white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    .custom-dropdown {
+      margin-top: 10px;
+    }
+
+    .custom-dropdown select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+  </style>
+  //html :
+  <!-- Location Button and Popup -->
+  <button type="button" on-click="_openMapPopup" class="button">Select Location</button>
+  <nuxeo-input value="{{document.properties.event_picture:location}}" label="Location" type="text" name="location" role="widget"></nuxeo-input>
+  
+  <!-- Map Popup -->
+  <div id="overlay"></div>
+  <div class="map-popup" id="mapPopup">
+    <div class="map-popup-header">
+      <h3>Pick Location</h3>
+    </div>
+    <div class="map-popup-body">
+      <input type="text" id="search-bar" placeholder="Search for a place..." on-keyup="_searchPlace" />
+      <div id="map-container">
+        <div id="map"></div>
+        <div class="marker"></div>
+      </div>
+    </div>
+    <div class="map-popup-footer">
+      <button type="button" on-click="_saveMapLocation" class="button">Save</button>
+      <button type="button" on-click="_closeMapPopup" class="button">Close</button>
+    </div>
+  </div>
+  //js :
+  behaviors: [Nuxeo.LayoutBehavior],
+      properties: {
+        document: {
+          type: Object,
+        },
+        map: Object,
+        view: Object,
+      },
+  
+      attached: function() {
+        this.mapInitialized = false;
+      },
+  
+      _openMapPopup: function() {
+        this.$.overlay.style.display = 'block';
+        this.$.mapPopup.style.display = 'block';
+  
+        if (!this.mapInitialized) {
+          this._initializeMap();
+          this.mapInitialized = true;
+        }
+  
+        setTimeout(() => {
+          this.map.updateSize();
+        }, 200);
+      },
+  
+      _initializeMap: function() {
+        this.view = new ol.View({
+          center: ol.proj.fromLonLat([30.8025, 26.8206]),
+          zoom: 6,
+          maxZoom: 18,
+          minZoom: 2,
+        });
+  
+        this.map = new ol.Map({
+          target: this.$.map,
+          layers: [
+            new ol.layer.Tile({
+              source: new ol.source.OSM(),
+            }),
+          ],
+          view: this.view,
+          interactions: ol.interaction.defaults({
+            dragPan: true,
+            mouseWheelZoom: true,
+          }).extend([
+            new ol.interaction.MouseWheelZoom({
+              constrainResolution: true,
+            })
+          ]),
+          controls: [],
+        });
+  
+        this.map.getViewport().addEventListener('keydown', (evt) => {
+          if ([37, 38, 39, 40].includes(evt.keyCode)) {
+            evt.preventDefault();
+          }
+        });
+  
+        this.map.on('click', this._handleMapClick.bind(this));
+      },
+  
+      _handleMapClick: function(event) {
+        const coords = ol.proj.toLonLat(event.coordinate);
+        this._reverseGeocode(coords[1], coords[0]);
+      },
+  
+      _reverseGeocode: function(lat, lng) {
+        var url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+  
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            if (data && data.address) {
+              var placeName = `${data.address.road || data.address.state || ''}, ${data.address.city || ''}, ${data.address.country || ''}`.trim();
+              this.set('document.properties.dc:title', placeName);
+              this.set('document.properties.event_picture:location', url);
+              this.notifyPath('document.properties.dc:title', placeName);
+              this.notifyPath('document.properties.event_picture:location', url);
+            }
+          })
+          .catch(error => {
+            console.error('Error during reverse geocoding:', error);
+          });
+      },
+  
+      _searchPlace: function(event) {
+        if (event.keyCode === 13) {
+          var query = event.target.value;
+          var url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`;
+  
+          fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              if (data && data.length > 0) {
+                var result = data[0];
+                var coords = [parseFloat(result.lon), parseFloat(result.lat)];
+                this.view.animate({
+                  center: ol.proj.fromLonLat(coords),
+                  zoom: 14,
+                });
+  
+                this._reverseGeocode(result.lat, result.lon);
+              }
+            })
+            .catch(error => {
+              console.error('Error during search:', error);
+            });
+        }
+      },
+  
+      _closeMapPopup: function() {
+        this.$.overlay.style.display = 'none';
+        this.$.mapPopup.style.display = 'none';
+      },
+  
+      _saveMapLocation: function() {
+        this._closeMapPopup();
+      },
+  
+      _handleTypeChange: function(event) {
+        const selectedType = event.target.value;
+        this.set('document.properties.common:icon', selectedType);
+      },
+  
+      _isSelected: function(currentValue, optionValue) {
+        return currentValue === optionValue;
+      },
+    });

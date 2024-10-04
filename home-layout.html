@@ -1,0 +1,604 @@
+<dom-module id="nuxeo-home">
+    <template>
+      <link rel="import" href="https://cdn.jsdelivr.net/npm/@polymer/iron-icons/iron-icons.html">
+      <link rel="import" href="https://cdn.jsdelivr.net/npm/@polymer/paper-icon-button/paper-icon-button.html">
+      <link rel="import" href="https://cdn.jsdelivr.net/npm/@polymer/app-layout/app-layout.html">
+  
+      <style include="nuxeo-styles">
+        :host {
+          display: flex;
+          flex-direction: column;
+        }
+  
+        #editPopup {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          color: #0f1a2b;
+          transform: translate(-50%, -50%);
+          z-index: 1001;
+          background-color: white;
+          box-shadow: 0 4px 12px rgba(38, 68, 102, 0.3);
+          border-radius: 8px;
+          padding: 20px;
+          display: none;
+          width: 80%;
+          max-width: 600px;
+          max-height: 80%;
+          overflow-y: auto;
+        }
+  
+        .popup {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1000;
+          box-shadow: 0 4px 12px rgba(38, 68, 102, 0.3);
+          border-radius: 15px;
+          background-color: #ffffff;
+          padding: 20px;
+          width: calc(100% - 40px);
+          max-width: 400px;
+          box-sizing: border-box;
+        }
+  
+        .custom-dropdown select {
+          width: 100%;
+          padding: 8px;
+          border-radius: 6px;
+          border: 1px solid #ccc;
+          background-color: #fff;
+          font-size: 14px;
+          appearance: none;
+          outline: none;
+        }
+  
+        .custom-dropdown select:focus {
+          border-color: #0f1f30;
+        }
+  
+        .custom-dropdown {
+          position: relative;
+        }
+  
+        .custom-dropdown::after {
+          content: '▼';
+          position: absolute;
+          top: 50%;
+          right: 10px;
+          transform: translateY(-50%);
+          pointer-events: none;
+          font-size: 12px;
+          color: #0f1f30;
+        }
+  
+        .buttons {
+          display: flex;
+          color: #0f1a2b;
+          justify-content: space-between;
+          margin-top: 20px;
+        }
+  
+        .dashboard {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          height: 100%;
+          transition: width 0.3s ease;
+        }
+  
+        .test {
+          display: contents;
+        }
+  
+        nuxeo-card {
+          width: 100%;
+          margin: 0;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+  
+        .gallery-containers {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 20px;
+          padding: 20px;
+          justify-content: space-evenly;
+          transition: padding 0.3s ease;
+        }
+  
+        .thumbnail-card {
+          background-color: rgba(255, 255, 255, 0.726);
+          position: relative;
+          overflow: hidden;
+  
+          border-radius: 8px;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          flex: 1 1 calc(25% - 40px);
+          max-width: 300px;
+          margin: 10px;
+          text-align: center;
+        }
+  
+        .thumbnail-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0px 10px 15px rgba(38, 68, 102, 0.3);
+        }
+  
+        .thumbnail-image-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 250px;
+          overflow: hidden;
+        }
+  
+        .thumbnail-image {
+          width: auto;
+          max-width: 100%;
+          max-height: 100%;
+          cursor: pointer;
+        }
+  
+        .thumbnail-label {
+          padding: 10px;
+          color: #0f1a2b;
+          font-size: 16px;
+          text-align: center;
+          font-weight: bold;
+        }
+  
+        .icon-container {
+          display: flex;
+          margin-top: 15px;
+          justify-content: center;
+          gap: 50px;
+        }
+  
+        .icon {
+          font-size: 19px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+  
+        .icon:hover {
+          color: #264466;
+          transform: scale(1.1);
+        }
+  
+        .styleinput {
+          font-size: 14px;
+          border-radius: 6px;
+          padding: 5px 10px;
+          transition: box-shadow 0.1s ease-in, border 0.1s ease-in, background-color 0.1s ease-in;
+          color: #0f1a2b;
+          background: #f7f7f7;
+          width: 100%;
+          box-sizing: border-box;
+        }
+  
+        .styleinput:hover {
+          border-color: #ccc;
+        }
+  
+        .styleinput:focus {
+          border-color: #000000;
+          background: #ffffff;
+        }
+  
+        .buttondelete {
+          margin: auto;
+          border-radius: 25px;
+          background-color: #000000;
+          padding: 10px 20px;
+          color: #ffffff;
+          font-size: 16px;
+          transition: background-color 0.3s ease;
+          width: 40%;
+          background-color: #15283d;
+          text-align: center;
+        }
+  
+        .buttoncancel {
+          border-radius: 25px;
+          margin: auto;
+          margin-top: 10px;
+          margin-bottom: 10px;
+          background-color: #000000;
+          padding: 10px 20px;
+          color: #ffffff;
+          font-size: 16px;
+          transition: background-color 0.3s ease;
+          width: 40%;
+          background-color: #15283d;
+          text-align: center;
+        }
+  
+        .button {
+          border-radius: 25px;
+          margin: auto;
+          margin-top: 10px;
+          margin-bottom: 10px;
+          background-color: #000000;
+          padding: 10px 20px;
+          color: #ffffff;
+          font-size: 16px;
+          transition: background-color 0.3s ease;
+          width: 40%;
+          background-color: #15283d;
+          text-align: center;
+        }
+  
+  
+        .buttondelete:hover,
+        .buttoncancel:hover,
+        .button:hover {
+          background-color: #264466;
+        }
+  
+        /* Responsive Design with Sidebar Awareness */
+        @media screen and (max-width: 1024px) {
+          .gallery-containers {
+            padding: 10px;
+            gap: 10px;
+          }
+  
+          .thumbnail-card {
+            flex: 1 1 calc(50% - 20px);
+            max-width: 100%;
+          }
+  
+          .icon-container {
+            gap: 40px;
+            font-size: 40px;
+          }
+  
+          .popup {
+            width: calc(100% - 40px);
+            /* Adjusting width for sidebar */
+            padding: 15px;
+          }
+        }
+  
+        @media screen and (max-width: 480px) {
+          .gallery-container {
+            padding: 5px;
+          }
+  
+          .thumbnail-card {
+            flex: 1 1 100%;
+            max-width: 100%;
+            margin: 5px 0;
+          }
+  
+          .thumbnail-label {
+            font-size: 14px;
+            color: #0f1a2b;
+          }
+  
+          .popup {
+            width: calc(100% - 10px);
+            /* Adjusting width for sidebar */
+            padding: 5px;
+          }
+  
+          .buttons {
+            flex-direction: column;
+            gap: 5px;
+          }
+  
+          .buttondelete,
+          .buttoncancel {
+            width: 100%;
+          }
+        }
+  
+        .dashboard.sidebar-open {
+          width: calc(100% - var(--sidebar-width));
+          /* Adjust based on sidebar width */
+        }
+  
+        .gallery-container.sidebar-open {
+          padding: 5px;
+          /* Adjust padding when sidebar is open */
+        }
+  
+        .styledtext {
+          margin-left: 15px;
+          font-size: 28px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #0f1a2b;
+          border-radius: 8px;
+        }
+  
+        .titles {
+          font-size: 28px;
+          font-weight: 700;
+          color: #0f1a2b;
+        }
+  
+        .pen-icon {
+          margin-right: 12px;
+          color: #284869;
+        }
+  
+        .lined {
+          height: 5px;
+          background-color: #264466;
+          width: 124px;
+          margin-left: 48%;
+        }
+      </style>
+  
+      <!-- Nuxeo Operations -->
+      <nuxeo-operation id="nxDeleteOperation" op="Document.Delete"></nuxeo-operation>
+      <nuxeo-operation id="nxUpdateOperation" op="Document.Update"></nuxeo-operation>
+  
+      <nuxeo-page>
+        <div class="test">
+          <section name="dashboard" class="dashboard">
+            <h2 icon="nuxeo:edit" heading="[[i18n('home.latestDocumentsEdited')]]"></h2>
+            <nuxeo-page-provider id="latestQuery" page-size="20" provider="domain_documents"
+              schemas="dublincore,common,uid" enrichers="thumbnail" params='{"queryParams": "/"}'
+              headers='{"X-NXfetch.document": "properties"}'>
+            </nuxeo-page-provider>
+            <div class="gallery-container">
+              <h2 class="styledtext">
+                <iron-icon icon="icons:create" class="pen-icon"></iron-icon>
+                Recently Edited
+              </h2>
+              <div class="lined"></div>
+              <div class="gallery-containers">
+                <template is="dom-repeat" items="{{_recentDocuments}}">
+                  <div class="thumbnail-card">
+                    <div class="thumbnail-image-container" on-click="_navigateToDocument">
+                      <img src="[[item.contextParameters.thumbnail.url]]" class="thumbnail-image" alt="Thumbnail" />
+                    </div>
+                    <div class="thumbnail-label">
+                      <span>[[item.title]]</span>
+                      <div class="icon-container">
+                        <iron-icon class="nuxeo-view icon" icon="icons:visibility"
+                          on-click="_navigateToDocument"></iron-icon>
+                        <iron-icon class="nuxeo-edit icon" icon="icons:create" on-click="_editDocument"></iron-icon>
+                        <iron-icon class="nuxeo-delete icon" icon="icons:delete" on-click="_showDeletePopup"></iron-icon>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </section>
+        </div>
+      </nuxeo-page>
+  
+      <!-- Delete Popup -->
+      <div id="deletePopup" class="popup" hidden$="{{!_isDeletePopupVisible}}">
+        <h2 class="titles">Delete Document</h2>
+        <p>Are you sure you want to delete this document?</p>
+        <div class="buttons">
+          <paper-button class="buttondelete" on-click="_confirmDelete">Delete</paper-button>
+          <paper-button class="buttoncancel" on-click="_cancelDelete">Cancel</paper-button>
+        </div>
+      </div>
+  
+      <!-- Edit Popup -->
+      <div id="editPopup" class="popup">
+        <h2 class="titles">Edit Picture Details</h2>
+  
+        <!-- Title Field -->
+        <nuxeo-input value="{{currentDocument.properties.dc:title}}" label="Title" type="text" required="true"
+          name="title" role="widget"></nuxeo-input>
+  
+        <!-- Type Field -->
+        <label for="typeDropdown">Type</label>
+        <div class="custom-dropdown">
+          <select id="typeDropdown" name="type" value="{{currentDocument.properties.common:icon}}"
+            on-change="_handleTypeChange">
+            <option value="" disabled>Select Type</option>
+            <option value="Pictures" selected$="{{_isSelected(currentDocument.properties.common:icon, 'Pictures')}}">
+              Pictures</option>
+            <option value="Videos" selected$="{{_isSelected(currentDocument.properties.common:icon, 'Videos')}}">Videos
+            </option>
+            <option value="Documents" selected$="{{_isSelected(currentDocument.properties.common:icon, 'Documents')}}">
+              Documents</option>
+          </select>
+        </div>
+  
+        <!-- Creation Date Field -->
+        <nuxeo-date-picker value="{{currentDocument.properties.dc:modified}}" label="Creation Date" name="creation_date"
+          role="widget"></nuxeo-date-picker>
+  
+        <!-- Description Field -->
+        <nuxeo-input value="{{currentDocument.properties.dc:description}}" label="Description" type="text"
+          name="description" role="widget"></nuxeo-input>
+  
+        <!-- Buttons -->
+        <div class="buttons">
+          <paper-button class="button" on-click="_closeEditPopup">Close</paper-button>
+          <paper-button class="button" on-click="_saveDocumentChanges">Save</paper-button>
+        </div>
+      </div>
+    </template>
+    <script>
+      Polymer({
+        is: 'nuxeo-home',
+        behaviors: [Nuxeo.RoutingBehavior, Nuxeo.FormatBehavior],
+  
+        properties: {
+          visible: {
+            type: Boolean,
+            observer: '_visibleChanged'
+          },
+          _recentDocuments: {
+            type: Array,
+            value: function () {
+              return [];
+            }
+          },
+          _isDeletePopupVisible: {
+            type: Boolean,
+            value: false
+          },
+          currentDocument: Object, // Document currently being edited
+          _documentToDelete: Object, // Document currently being deleted
+        },
+  
+        listeners: {
+          'document-updated': '_onDocumentUpdated'
+        },
+  
+        _onDocumentUpdated: function (event) {
+          const { documentId, base64data } = event.detail;
+          console.log('Document Updated Event Received:', documentId, base64data);
+  
+          const documentIndex = this._recentDocuments.findIndex(doc => doc.uid === documentId);
+          if (documentIndex !== -1) {
+            console.log('Updating document thumbnail:', documentId);
+            this.set(`_recentDocuments.${documentIndex}.contextParameters.thumbnail.url`, base64data);
+            this.notifyPath(`_recentDocuments.${documentIndex}.contextParameters.thumbnail.url`);
+          }
+        },
+  
+        _visibleChanged: function (visible) {
+          if (visible) {
+            this._refresh();
+          }
+        },
+  
+        _refresh: function () {
+          this.$.latestQuery.fetch().then((response) => {
+            const documents = response.entries || [];
+            console.log(documents);
+  
+            documents.forEach(doc => {
+              // Check if a locally stored image exists for this document
+              const savedImageSrc = localStorage.getItem(`homepageImageSrc_${doc.uid}`);
+              if (savedImageSrc) {
+                // Replace the thumbnail URL with the locally stored image
+                doc.contextParameters.thumbnail.url = savedImageSrc;
+              } else if (doc.properties['file:content']) {
+                // Fallback to the full-resolution image if available
+                doc.contextParameters.thumbnail.url = doc.properties['file:content'].data;
+              }
+            });
+  
+            this.set('_recentDocuments', documents);
+          }).catch((error) => {
+            console.error('Error fetching documents:', error);
+          });
+        },
+  
+        _navigateToDocument: function (event) {
+          event.stopPropagation();
+          var document = event.model.item;
+          if (document) {
+            var detail = { doc: document };
+            this.navigateTo('browse', detail.doc.path);
+            this.fire('navigate', detail);
+          }
+        },
+  
+        _editDocument: function (event) {
+          event.stopPropagation();
+          var document = event.model.item;
+          if (document) {
+            this.set('currentDocument', document);
+            console.log('Current document properties:', document);
+            this._openEditPopup();
+          }
+        },
+  
+        _openEditPopup: function () {
+          this.$.editPopup.style.display = 'block';
+        },
+  
+        _closeEditPopup: function () {
+          this.$.editPopup.style.display = 'none';
+          this.set('currentDocument', null);
+        },
+  
+        _isSelected: function (currentType, optionValue) {
+          return currentType === optionValue;
+        },
+  
+        _handleTypeChange: function (event) {
+          // Get the selected value
+          const selectedType = event.target.value;
+  
+          // Update the currentDocument properties with the selected type
+          this.set('currentDocument.properties.common:icon', selectedType);
+        },
+  
+        _saveDocumentChanges: function () {
+          if (this.currentDocument) {
+            const updatedProperties = {};
+            const isValid = (value) => value !== undefined && value !== null;
+            if (isValid(this.currentDocument.properties['dc:title'])) {
+              updatedProperties['dc:title'] = this.currentDocument.properties['dc:title'];
+            }
+            if (isValid(this.currentDocument.properties['dc:description'])) {
+              updatedProperties['dc:description'] = this.currentDocument.properties['dc:description'];
+            }
+            if (isValid(this.currentDocument.properties['common:icon'])) {
+              updatedProperties['common:icon'] = this.currentDocument.properties['common:icon'];
+            }
+            if (isValid(this.currentDocument.properties['dc:modified'])) {
+              updatedProperties['dc:modified'] = this.currentDocument.properties['dc:modified'];
+            }
+  
+            if (Object.keys(updatedProperties).length > 0) {
+              this.$.nxUpdateOperation.input = this.currentDocument.uid;
+              this.$.nxUpdateOperation.params = {
+                properties: updatedProperties
+              };
+  
+              this.$.nxUpdateOperation.execute()
+                .then(() => {
+                  console.log('Document updated:', this.currentDocument.properties['dc:title']);
+                  this._refresh();
+                  this._closeEditPopup();
+                })
+                .catch((error) => {
+                  console.error('Error updating document:', error.message, error);
+                  alert('Error updating document: ' + JSON.stringify(error));
+                });
+            } else {
+              console.warn('No properties were updated because none were modified.');
+              alert('Please modify at least one field to save changes.');
+            }
+          }
+        },
+  
+        _showDeletePopup: function (event) {
+          event.stopPropagation();
+          this._documentToDelete = event.model.item;
+          this.set('_isDeletePopupVisible', true);
+        },
+  
+        _confirmDelete: function () {
+          if (this._documentToDelete) {
+            this.$.nxDeleteOperation.input = this._documentToDelete.uid;
+            this.$.nxDeleteOperation.execute()
+              .then(() => {
+                console.log('Document deleted:', this._documentToDelete.title);
+                this._refresh();
+                this._cancelDelete();
+              })
+              .catch((error) => {
+                console.error('Error deleting document:', error);
+              });
+          }
+        },
+  
+        _cancelDelete: function () {
+          this.set('_isDeletePopupVisible', false);
+          this._documentToDelete = null;
+        }
+      });
+    </script>
+  </dom-module>
